@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import EntityCard from '../common/EntityCard';
+import StatusPill from '../common/StatusPill';
+import { getSubtotal, getBillingPreview } from '../../utils/billing';
 import '../../styles/index.css';
 
 const BillingModule = () => {
     const [customers, setCustomers] = useState([]);
     const [items, setItems] = useState([]);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
-    const [selectedItems, setSelectedItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [billItems, setBillItems] = useState([]);
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [showItemsModal, setShowItemsModal] = useState(false);
+    const [modalQuantities, setModalQuantities] = useState({});
     const [createdInvoice, setCreatedInvoice] = useState(null);
 
     useEffect(() => {
@@ -19,8 +25,8 @@ const BillingModule = () => {
         try {
             setLoading(true);
             const [customersRes, itemsRes] = await Promise.all([
-                api.getActiveCustomers(),
-                api.getActiveItems()
+                api.getAllCustomers(),
+                api.getAllItems()
             ]);
 
             if (customersRes.data.success) setCustomers(customersRes.data.data);
@@ -32,41 +38,71 @@ const BillingModule = () => {
         }
     };
 
-    const handleCustomerSelect = (customerId) => {
-        const customer = customers.find(c => c.id === parseInt(customerId));
+    const handleSelectCustomer = (customer) => {
         setSelectedCustomer(customer);
-        setSelectedItems([]);
+        setShowCustomerModal(false);
+        setBillItems([]);
+        setModalQuantities({});
         setCreatedInvoice(null);
+        setMessage({ type: '', text: '' });
     };
 
-    const handleAddItem = () => {
-        setSelectedItems([...selectedItems, { item_id: '', quantity: 1 }]);
+    const incrementQty = (itemId) => {
+        setBillItems((prev) =>
+            prev.map((row) =>
+                row.item_id === itemId
+                    ? { ...row, quantity: row.quantity + 1 }
+                    : row
+            )
+        );
     };
 
-    const handleItemChange = (index, field, value) => {
-        const updated = [...selectedItems];
-        updated[index] = { ...updated[index], [field]: field === 'quantity' ? parseInt(value) : parseInt(value) };
-        setSelectedItems(updated);
+    const decrementQty = (itemId) => {
+        setBillItems((prev) =>
+            prev.map((row) =>
+                row.item_id === itemId
+                    ? { ...row, quantity: Math.max(1, row.quantity - 1) }
+                    : row
+            )
+        );
     };
 
-    const handleRemoveItem = (index) => {
-        setSelectedItems(selectedItems.filter((_, i) => i !== index));
-    };
-
-    const calculateTotals = () => {
-        let subtotal = 0;
-        selectedItems.forEach(item => {
-            const itemData = items.find(i => i.id === item.item_id);
-            if (itemData) {
-                subtotal += itemData.customer_selling_price * item.quantity;
-            }
+    const updateModalQty = (itemId, delta) => {
+        setModalQuantities((prev) => {
+            const current = prev[itemId] || 0;
+            return { ...prev, [itemId]: Math.max(0, current + delta) };
         });
+    };
 
-        const gstPercentage = selectedCustomer?.is_gst_registered ? 0 : 18;
-        const gstAmount = gstPercentage > 0 ? Math.round((subtotal * gstPercentage) / 100 * 100) / 100 : 0;
-        const total = subtotal + gstAmount;
+    const openItemsModal = () => {
+        if (!selectedCustomer) {
+            setShowCustomerModal(true);
+            return;
+        }
+        const seed = {};
+        billItems.forEach((row) => {
+            seed[row.item_id] = row.quantity;
+        });
+        setModalQuantities(seed);
+        setShowItemsModal(true);
+    };
 
-        return { subtotal, gstAmount, gstPercentage, total };
+    const applySelectedItems = () => {
+        const rows = Object.entries(modalQuantities)
+            .filter(([, qty]) => qty > 0)
+            .map(([id, qty]) => {
+                const found = items.find((item) => item.id === Number(id));
+                return {
+                    item_id: Number(id),
+                    item_name: found.item_name,
+                    unit_price: Number(found.customer_selling_price),
+                    status: found.status,
+                    quantity: qty
+                };
+            });
+
+        setBillItems(rows);
+        setShowItemsModal(false);
     };
 
     const handleCreateInvoice = async () => {
@@ -75,8 +111,8 @@ const BillingModule = () => {
             return;
         }
 
-        if (selectedItems.length === 0 || selectedItems.some(i => !i.item_id || i.quantity === 0)) {
-            setMessage({ type: 'error', text: 'Please add at least one item with quantity' });
+        if (billItems.length === 0) {
+            setMessage({ type: 'error', text: 'Please add at least one item' });
             return;
         }
 
@@ -84,13 +120,15 @@ const BillingModule = () => {
             setLoading(true);
             const response = await api.createInvoice({
                 customer_id: selectedCustomer.id,
-                items: selectedItems
+                items: billItems.map((row) => ({
+                    item_id: row.item_id,
+                    quantity: row.quantity
+                }))
             });
 
             if (response.data.success) {
                 setCreatedInvoice(response.data.data);
-                setMessage({ type: 'success', text: 'Invoice created successfully!' });
-                setSelectedItems([]);
+                setMessage({ type: '', text: '' });
             }
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Error creating invoice' });
@@ -99,114 +137,222 @@ const BillingModule = () => {
         }
     };
 
-    const totals = calculateTotals();
+    const clearDraft = () => {
+        setSelectedCustomer(null);
+        setBillItems([]);
+        setShowCustomerModal(false);
+        setShowItemsModal(false);
+        setModalQuantities({});
+        setCreatedInvoice(null);
+        setMessage({ type: '', text: '' });
+    };
+
+    const total = getSubtotal(billItems);
+    const gstPreview = getBillingPreview(billItems, selectedCustomer);
 
     return (
-        <div className="card">
-            <h2>Create Invoice</h2>
+        <section className="hk-page-shell">
+            <h2 className="hk-page-title" style={{ textTransform: 'none' }}>Billing</h2>
 
             {message.text && (
                 <div className={`alert alert-${message.type}`}>
                     <span>{message.text}</span>
-                    <button onClick={() => setMessage({ type: '', text: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
+                    <button onClick={() => setMessage({ type: '', text: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>x</button>
                 </div>
             )}
 
             {!createdInvoice && (
-                <>
-                    <div className="form-group">
-                        <label>Select Customer *</label>
-                        <select value={selectedCustomer?.id || ''} onChange={(e) => handleCustomerSelect(e.target.value)}>
-                            <option value="">Choose a customer...</option>
-                            {customers.map(customer => (
-                                <option key={customer.id} value={customer.id}>
-                                    {customer.customer_name} {customer.is_gst_registered ? '(GST Reg)' : '(Non-GST)'}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {selectedCustomer && (
-                        <div className="card" style={{ backgroundColor: '#f9f9f9', marginTop: '20px' }}>
-                            <h3>Selected Customer Details</h3>
-                            <p><strong>Name:</strong> {selectedCustomer.customer_name}</p>
-                            <p><strong>Address:</strong> {selectedCustomer.customer_address}</p>
-                            <p><strong>GST Status:</strong> {selectedCustomer.is_gst_registered ? 'Registered (0% GST)' : 'Not Registered (18% GST)'}</p>
-
-                            <h3 style={{ marginTop: '20px' }}>Add Items</h3>
-                            <div style={{ marginTop: '15px' }}>
-                                {selectedItems.map((selectedItem, index) => (
-                                    <div key={index} className="form-row" style={{ marginBottom: '15px', padding: '15px', backgroundColor: 'white', borderRadius: '5px', border: '1px solid #ddd' }}>
-                                        <div className="form-group">
-                                            <label>Item</label>
-                                            <select value={selectedItem.item_id} onChange={(e) => handleItemChange(index, 'item_id', e.target.value)}>
-                                                <option value="">Choose item...</option>
-                                                {items.map(item => (
-                                                    <option key={item.id} value={item.id}>
-                                                        {item.item_name} (₹{parseFloat(item.customer_selling_price).toFixed(2)})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Quantity</label>
-                                            <input type="number" min="1" value={selectedItem.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} />
-                                        </div>
-                                        <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
-                                            <button type="button" className="btn btn-danger" onClick={() => handleRemoveItem(index)}>Remove</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <button type="button" className="btn btn-secondary" onClick={handleAddItem}>+ Add Another Item</button>
-
-                            {selectedItems.length > 0 && (
-                                <div className="card" style={{ marginTop: '20px', backgroundColor: '#f0f0f0' }}>
-                                    <h3>Bill Summary</h3>
-                                    <table style={{ width: '100%', marginTop: '10px' }}>
-                                        <tbody>
-                                            <tr>
-                                                <td><strong>Subtotal:</strong></td>
-                                                <td style={{ textAlign: 'right' }}>₹{totals.subtotal.toFixed(2)}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>GST ({totals.gstPercentage}%):</strong></td>
-                                                <td style={{ textAlign: 'right' }}>₹{totals.gstAmount.toFixed(2)}</td>
-                                            </tr>
-                                            <tr style={{ borderTop: '2px solid #2c3e50' }}>
-                                                <td><strong style={{ fontSize: '16px' }}>Total Amount:</strong></td>
-                                                <td style={{ textAlign: 'right', fontSize: '16px', fontWeight: 'bold' }}>₹{totals.total.toFixed(2)}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <button type="button" className="btn btn-success" onClick={handleCreateInvoice} disabled={loading} style={{ marginTop: '15px', width: '100%' }}>
-                                        {loading ? 'Creating Invoice...' : 'Generate Invoice'}
-                                    </button>
+                <div className="hk-billing-board">
+                    <section className="hk-billing-panel">
+                        <header>Customer Details</header>
+                        <div className="hk-billing-body">
+                            {!selectedCustomer && (
+                                <button className="hk-add-btn" onClick={() => setShowCustomerModal(true)}>+ Add</button>
+                            )}
+                            {selectedCustomer && (
+                                <div className="hk-customer-lines">
+                                    <p><span>Name</span> : {selectedCustomer.customer_name}</p>
+                                    <p><span>Address</span> : {selectedCustomer.customer_address}</p>
+                                    <p><span>Pan Card</span> : {selectedCustomer.customer_pan_card}</p>
+                                    <p><span>GST Num</span> : {selectedCustomer.customer_gst_number || '-'}</p>
                                 </div>
                             )}
                         </div>
+                    </section>
+
+                    <section className="hk-billing-panel">
+                        <header>Items</header>
+                        <div className="hk-billing-body">
+                            {billItems.length === 0 && (
+                                <button className="hk-add-btn" onClick={openItemsModal}>+ Add</button>
+                            )}
+
+                            {billItems.length > 0 && (
+                                <div className="hk-bill-table-wrap">
+                                    <table className="hk-bill-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Amount</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {billItems.map((row) => (
+                                                <tr key={row.item_id}>
+                                                    <td>{row.item_name}</td>
+                                                    <td>
+                                                        <div className="hk-qty-inline">
+                                                            <button onClick={() => incrementQty(row.item_id)} type="button">+</button>
+                                                            <span>{row.quantity}</span>
+                                                            <button onClick={() => decrementQty(row.item_id)} type="button">-</button>
+                                                        </div>
+                                                    </td>
+                                                    <td>{(row.unit_price * row.quantity).toFixed(2)}</td>
+                                                </tr>
+                                            ))}
+                                            <tr className="hk-total-row">
+                                                <td />
+                                                <td>Total</td>
+                                                <td>{total.toFixed(2)}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    {billItems.length > 0 && (
+                        <>
+                            <section className="hk-billing-panel">
+                                <header>Bill Summary (Preview)</header>
+                                <div className="hk-billing-body" style={{ justifyContent: 'flex-start' }}>
+                                    <div className="hk-customer-lines">
+                                        <p><span>Subtotal</span> : {gstPreview.subtotal.toFixed(2)}</p>
+                                        <p><span>GST</span> : {gstPreview.gstPercentage}%</p>
+                                        <p><span>GST Amount</span> : {gstPreview.gstAmount.toFixed(2)}</p>
+                                        <p><span>Total</span> : {gstPreview.grandTotal.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <div className="hk-form-actions" style={{ justifyContent: 'flex-end' }}>
+                                <button type="button" className="hk-btn-cancel" onClick={clearDraft}>Cancel</button>
+                                <button type="button" className="hk-btn-create" onClick={handleCreateInvoice} disabled={loading}>
+                                    {loading ? 'Creating...' : 'Create'}
+                                </button>
+                            </div>
+                        </>
                     )}
-                </>
+                </div>
             )}
 
             {createdInvoice && (
-                <div className="card" style={{ backgroundColor: '#d4edda', borderLeft: '4px solid #27ae60', marginTop: '20px' }}>
-                    <h3 style={{ color: '#155724' }}>✓ Invoice Created Successfully</h3>
-                    <p><strong>Invoice ID:</strong> {createdInvoice.invoice_id}</p>
-                    <p><strong>Customer:</strong> {createdInvoice.customer_name}</p>
-                    <p><strong>Subtotal:</strong> ₹{parseFloat(createdInvoice.subtotal).toFixed(2)}</p>
-                    <p><strong>GST ({createdInvoice.gst_percentage}%):</strong> ₹{parseFloat(createdInvoice.gst_amount).toFixed(2)}</p>
-                    <h3 style={{ color: '#155724', marginTop: '10px' }}>Total: ₹{parseFloat(createdInvoice.total_amount).toFixed(2)}</h3>
+                <div className="hk-billing-board">
+                    <section className="hk-billing-panel">
+                        <header>
+                            Customer Details
+                            <strong className="hk-invoice-id">Invoice ID: {createdInvoice.invoice_id}</strong>
+                        </header>
+                        <div className="hk-billing-body">
+                            <div className="hk-customer-lines">
+                                <p><span>Name</span> : {createdInvoice.customer_name}</p>
+                                <p><span>Address</span> : {selectedCustomer?.customer_address}</p>
+                                <p><span>Pan Card</span> : {selectedCustomer?.customer_pan_card}</p>
+                                <p><span>GST Num</span> : {selectedCustomer?.customer_gst_number || '-'}</p>
+                            </div>
+                        </div>
+                    </section>
 
-                    <div className="btn-group" style={{ marginTop: '15px' }}>
-                        <button type="button" className="btn btn-success" onClick={() => window.print()}>Print Invoice</button>
-                        <button type="button" className="btn btn-secondary" onClick={() => { setCreatedInvoice(null); setSelectedCustomer(null); setSelectedItems([]); setMessage({ type: '', text: '' }); }}>Create New Invoice</button>
+                    <section className="hk-billing-panel">
+                        <header>Items</header>
+                        <div className="hk-billing-body">
+                            <table className="hk-bill-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Amount</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {createdInvoice.items.map((row) => (
+                                        <tr key={row.id}>
+                                            <td>{row.item_name}</td>
+                                            <td>{row.quantity}</td>
+                                            <td>{Number(row.line_total).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr className="hk-total-row">
+                                        <td />
+                                        <td>Total</td>
+                                        <td>{Number(createdInvoice.total_amount).toFixed(2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            )}
+
+            {showCustomerModal && (
+                <div className="hk-modal-backdrop" onClick={() => setShowCustomerModal(false)}>
+                    <div className="hk-modal-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="hk-modal-head">
+                            <h3>Select Customer</h3>
+                            <button type="button" className="hk-btn-cancel" onClick={() => setShowCustomerModal(false)}>Cancel</button>
+                        </div>
+                        <div className="hk-entity-grid">
+                            {customers.map((customer) => (
+                                <EntityCard
+                                    key={customer.id}
+                                    title={customer.customer_name}
+                                    status={customer.status}
+                                    onClick={() => handleSelectCustomer(customer)}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
-        </div>
+
+            {showItemsModal && (
+                <div className="hk-modal-backdrop" onClick={() => setShowItemsModal(false)}>
+                    <div className="hk-modal-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="hk-modal-head">
+                            <h3>Select Items</h3>
+                        </div>
+                        <div className="hk-entity-grid">
+                            {items.map((item) => {
+                                const qty = modalQuantities[item.id] || 0;
+                                const isInactive = item.status !== 'Active';
+                                return (
+                                    <EntityCard key={item.id} title={item.item_name} status={item.status}>
+                                        {isInactive ? (
+                                            <StatusPill status="In-Active" />
+                                        ) : qty > 0 ? (
+                                            <div className="hk-qty-inline">
+                                                <button onClick={() => updateModalQty(item.id, 1)} type="button">+</button>
+                                                <span>{qty}</span>
+                                                <button onClick={() => updateModalQty(item.id, -1)} type="button">-</button>
+                                            </div>
+                                        ) : (
+                                            <button className="hk-inline-add" type="button" onClick={() => updateModalQty(item.id, 1)}>ADD</button>
+                                        )}
+                                    </EntityCard>
+                                );
+                            })}
+                        </div>
+
+                        <div className="hk-form-actions" style={{ justifyContent: 'flex-end' }}>
+                            <button type="button" className="hk-btn-cancel" onClick={() => setShowItemsModal(false)}>Cancel</button>
+                            <button type="button" className="hk-btn-create" onClick={applySelectedItems}>Add</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </section>
     );
 };
 

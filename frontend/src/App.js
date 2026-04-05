@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import CustomerMaster from './components/Master/CustomerMaster';
 import ItemMaster from './components/Master/ItemMaster';
+import MasterHome from './components/Master/MasterHome';
 import BillingModule from './components/Billing/BillingModule';
 import Dashboard from './components/Dashboard/Dashboard';
 import './styles/index.css';
@@ -9,41 +10,42 @@ import './styles/index.css';
 function App() {
     const location = useLocation();
 
-    const isActive = (path) => location.pathname === path ? 'active' : '';
+    const isActive = (path) => {
+        if (path === '/master') {
+            return location.pathname.startsWith('/master') ? 'active' : '';
+        }
+        return location.pathname === path ? 'active' : '';
+    };
 
     return (
-        <div className="app-container">
-            {/* Sidebar Navigation */}
-            <div className="sidebar">
-                <h2>LogiEdge</h2>
-                <nav>
-                    <Link to="/" className={`nav-item ${isActive('/')}`}>
-                        Dashboard
-                    </Link>
-                    <Link to="/billing" className={`nav-item ${isActive('/billing')}`}>
-                        Billing
-                    </Link>
-                    <Link to="/customers" className={`nav-item ${isActive('/customers')}`}>
-                        Customers
-                    </Link>
-                    <Link to="/items" className={`nav-item ${isActive('/items')}`}>
-                        Items
-                    </Link>
-                </nav>
-            </div>
+        <div className="hk-app-shell">
+            <div className="hk-topbar" />
 
-            {/* Main Content */}
-            <div className="main-content">
-                <div className="header">
-                    <h1>LogiEdge Billing Dashboard</h1>
-                </div>
+            <div className="hk-layout">
+                <aside className="hk-sidebar">
+                    <nav>
+                        <Link to="/" className={`hk-nav-item ${isActive('/')}`}>
+                            Dashboard
+                        </Link>
+                        <Link to="/master" className={`hk-nav-item ${isActive('/master')}`}>
+                            Master
+                        </Link>
+                        <Link to="/billing" className={`hk-nav-item ${isActive('/billing')}`}>
+                            Billing
+                        </Link>
+                    </nav>
+                </aside>
 
-                <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/billing" element={<BillingModule />} />
-                    <Route path="/customers" element={<CustomerMaster />} />
-                    <Route path="/items" element={<ItemMaster />} />
-                </Routes>
+                <main className="hk-main-content">
+                    <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/master" element={<MasterHome />} />
+                        <Route path="/master/customers" element={<CustomerMaster />} />
+                        <Route path="/master/items" element={<ItemMaster />} />
+                        <Route path="/billing" element={<BillingModule />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </main>
             </div>
         </div>
     );

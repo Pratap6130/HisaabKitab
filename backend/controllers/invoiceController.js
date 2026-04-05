@@ -1,35 +1,17 @@
 import pool from '../config/database.js';
-
-// Helper function to generate unique invoice ID
-const generateInvoiceId = async () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let invoiceId;
-    let exists = true;
-
-    while (exists) {
-        let randomPart = '';
-        for (let i = 0; i < 6; i++) {
-            randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        invoiceId = 'INVC' + randomPart;
-
-        const result = await pool.query('SELECT id FROM invoices WHERE invoice_id = $1', [invoiceId]);
-        exists = result.rows.length > 0;
-    }
-
-    return invoiceId;
-};
+import {
+    validateInvoicePayload,
+    generateInvoiceId,
+    calculateInvoiceTotals,
+    buildInvoiceItemRows
+} from '../services/invoiceService.js';
 
 // Create new invoice
 export const createInvoice = async (req, res) => {
     const client = await pool.connect();
     try {
         const { customer_id, items } = req.body;
-
-        // Validation
-        if (!customer_id || !items || items.length === 0) {
-            return res.status(400).json({ success: false, message: 'Missing customer_id or items' });
-        }
+        validateInvoicePayload(customer_id, items);
 
         await client.query('BEGIN');
 
@@ -41,47 +23,37 @@ export const createInvoice = async (req, res) => {
         }
 
         const customer = customerResult.rows[0];
-        let subtotal = 0;
-
-        // Calculate subtotal
-        for (const item of items) {
-            const itemResult = await client.query('SELECT customer_selling_price FROM items WHERE id = $1', [item.item_id]);
-            if (itemResult.rows.length === 0) {
-                await client.query('ROLLBACK');
-                return res.status(404).json({ success: false, message: `Item ${item.item_id} not found` });
-            }
-            const price = itemResult.rows[0].customer_selling_price;
-            subtotal += price * item.quantity;
-        }
-
-        // Calculate GST
-        const gstPercentage = customer.is_gst_registered ? 0 : 18;
-        const gstAmount = gstPercentage > 0 ? Math.round((subtotal * gstPercentage) / 100 * 100) / 100 : 0;
-        const totalAmount = subtotal + gstAmount;
+        const totals = await calculateInvoiceTotals(client, customer, items);
 
         // Generate unique invoice ID
-        const invoiceId = await generateInvoiceId();
+        const invoiceId = await generateInvoiceId(client);
 
         // Create invoice
         const invoiceResult = await client.query(
             `INSERT INTO invoices (invoice_id, customer_id, subtotal, gst_amount, gst_percentage, total_amount, status)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
-            [invoiceId, customer_id, subtotal, gstAmount, gstPercentage, totalAmount, 'Generated']
+            [
+                invoiceId,
+                customer_id,
+                totals.subtotal,
+                totals.gstAmount,
+                totals.gstPercentage,
+                totals.totalAmount,
+                'Generated'
+            ]
         );
 
         const invoice = invoiceResult.rows[0];
 
         // Create invoice items
-        for (const item of items) {
-            const itemResult = await client.query('SELECT customer_selling_price FROM items WHERE id = $1', [item.item_id]);
-            const price = itemResult.rows[0].customer_selling_price;
-            const lineTotal = price * item.quantity;
+        const invoiceItemRows = buildInvoiceItemRows(invoice.id, items, totals.priceByItemId);
+        for (const row of invoiceItemRows) {
 
             await client.query(
                 `INSERT INTO invoice_items (invoice_id, item_id, quantity, unit_price, line_total)
                  VALUES ($1, $2, $3, $4, $5)`,
-                [invoice.id, item.item_id, item.quantity, price, lineTotal]
+                [row.invoiceId, row.itemId, row.quantity, row.unitPrice, row.lineTotal]
             );
         }
 
@@ -115,6 +87,9 @@ export const createInvoice = async (req, res) => {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error(error);
+        if (error.status) {
+            return res.status(error.status).json({ success: false, message: error.message });
+        }
         res.status(500).json({ success: false, message: 'Error creating invoice' });
     } finally {
         client.release();

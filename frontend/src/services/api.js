@@ -6,10 +6,7 @@ const normalizeApiBaseUrl = (rawBaseUrl) => {
     if (!rawBaseUrl || !rawBaseUrl.trim()) {
         return DEFAULT_API_BASE_URL;
     }
-
-    let baseUrl = rawBaseUrl.trim();
-
-    // Support accidental values like ':5000/api' by assuming localhost.
+    let baseUrl = rawBaseUrl.trim()
     if (baseUrl.startsWith(':')) {
         baseUrl = `http://localhost${baseUrl}`;
     } else if (baseUrl.startsWith('//')) {
@@ -17,7 +14,6 @@ const normalizeApiBaseUrl = (rawBaseUrl) => {
     } else if (!baseUrl.startsWith('/') && !/^https?:\/\//i.test(baseUrl)) {
         baseUrl = `http://${baseUrl}`;
     }
-
     return baseUrl.replace(/\/+$/, '');
 };
 
