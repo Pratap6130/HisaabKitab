@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: logiedge-billing-backend
+    env: node
+    region: ohio
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DB_HOST
+        fromDatabase:
+          name: logiedge-database
+          property: host
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: neondb
+      - key: DB_USER
+        value: neondb_owner
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: logiedge-database
+          property: password
+      - key: DB_SSL
+        value: require
+      - key: API_PREFIX
+        value: /api
+
+databases:
+  - name: logiedge-database
+    databaseName: neondb
+    user: neondb_owner
+    ipAllowList:
+      - key: office
+        value: 0.0.0.0/0
