@@ -92,15 +92,6 @@ const Dashboard = () => {
         setSelectedInvoice(null);
     };
 
-    const getInvoicesToDisplay = () => {
-        if (activeTab === 'recent') return recentInvoices;
-        if (activeTab === 'customer') return customerInvoices;
-        if (activeTab === 'search') return searchResults;
-        return [];
-    };
-
-    const invoices = getInvoicesToDisplay();
-
     return (
         <div className="card">
             <h1 style={{ marginBottom: '30px' }}>Dashboard</h1>
