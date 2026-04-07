@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import CustomerMaster from './components/Master/CustomerMaster';
 import ItemMaster from './components/Master/ItemMaster';
@@ -9,6 +9,7 @@ import './styles/index.css';
 
 function App() {
     const location = useLocation();
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const isActive = (path) => {
         if (path === '/master') {
@@ -22,18 +23,33 @@ function App() {
             <div className="hk-topbar" />
 
             <div className="hk-layout">
-                <aside className="hk-sidebar">
+                <aside className={`hk-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+                    <div className="hk-sidebar-brand">
+                        <h1 className="hk-brand-full">HisaabKitab</h1>
+                        <span className="hk-brand-short">HK</span>
+                        <p className="hk-brand-sub">Business Management</p>
+                    </div>
                     <nav>
                         <Link to="/" className={`hk-nav-item ${isActive('/')}`}>
-                            Dashboard
+                            <span className="hk-nav-icon">📊</span>
+                            <span className="hk-nav-label">Dashboard</span>
                         </Link>
                         <Link to="/master" className={`hk-nav-item ${isActive('/master')}`}>
-                            Master
+                            <span className="hk-nav-icon">📋</span>
+                            <span className="hk-nav-label">Master</span>
                         </Link>
                         <Link to="/billing" className={`hk-nav-item ${isActive('/billing')}`}>
-                            Billing
+                            <span className="hk-nav-icon">🧾</span>
+                            <span className="hk-nav-label">Billing</span>
                         </Link>
                     </nav>
+                    <button
+                        className="hk-sidebar-toggle"
+                        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        <span className="hk-toggle-icon">{sidebarCollapsed ? '»' : '«'}</span>
+                    </button>
                 </aside>
 
                 <main className="hk-main-content">

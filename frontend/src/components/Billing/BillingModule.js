@@ -153,11 +153,12 @@ const BillingModule = () => {
     return (
         <section className="hk-page-shell">
             <h2 className="hk-page-title" style={{ textTransform: 'none' }}>Billing</h2>
+            <p className="hk-page-subtitle">Create and manage invoices</p>
 
             {message.text && (
                 <div className={`alert alert-${message.type}`}>
                     <span>{message.text}</span>
-                    <button onClick={() => setMessage({ type: '', text: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>x</button>
+                    <button onClick={() => setMessage({ type: '', text: '' })}>×</button>
                 </div>
             )}
 
@@ -167,7 +168,7 @@ const BillingModule = () => {
                         <header>Customer Details</header>
                         <div className="hk-billing-body">
                             {!selectedCustomer && (
-                                <button className="hk-add-btn" onClick={() => setShowCustomerModal(true)}>+ Add</button>
+                                <button className="hk-add-btn" onClick={() => setShowCustomerModal(true)}>+ Select Customer</button>
                             )}
                             {selectedCustomer && (
                                 <div className="hk-customer-lines">
@@ -184,7 +185,7 @@ const BillingModule = () => {
                         <header>Items</header>
                         <div className="hk-billing-body">
                             {billItems.length === 0 && (
-                                <button className="hk-add-btn" onClick={openItemsModal}>+ Add</button>
+                                <button className="hk-add-btn" onClick={openItemsModal}>+ Add Items</button>
                             )}
 
                             {billItems.length > 0 && (
@@ -193,7 +194,7 @@ const BillingModule = () => {
                                         <thead>
                                             <tr>
                                                 <th>Name</th>
-                                                <th>Amount</th>
+                                                <th>Quantity</th>
                                                 <th>Amount</th>
                                             </tr>
                                         </thead>
@@ -205,7 +206,7 @@ const BillingModule = () => {
                                                         <div className="hk-qty-inline">
                                                             <button onClick={() => incrementQty(row.item_id)} type="button">+</button>
                                                             <span>{row.quantity}</span>
-                                                            <button onClick={() => decrementQty(row.item_id)} type="button">-</button>
+                                                            <button onClick={() => decrementQty(row.item_id)} type="button">−</button>
                                                         </div>
                                                     </td>
                                                     <td>{(row.unit_price * row.quantity).toFixed(2)}</td>
@@ -240,7 +241,7 @@ const BillingModule = () => {
                             <div className="hk-form-actions" style={{ justifyContent: 'flex-end' }}>
                                 <button type="button" className="hk-btn-cancel" onClick={clearDraft}>Cancel</button>
                                 <button type="button" className="hk-btn-create" onClick={handleCreateInvoice} disabled={loading}>
-                                    {loading ? 'Creating...' : 'Create'}
+                                    {loading ? 'Creating...' : 'Create Invoice'}
                                 </button>
                             </div>
                         </>
@@ -272,7 +273,7 @@ const BillingModule = () => {
                                 <thead>
                                     <tr>
                                         <th>Name</th>
-                                        <th>Amount</th>
+                                        <th>Quantity</th>
                                         <th>Amount</th>
                                     </tr>
                                 </thead>
@@ -335,7 +336,7 @@ const BillingModule = () => {
                                             <div className="hk-qty-inline">
                                                 <button onClick={() => updateModalQty(item.id, 1)} type="button">+</button>
                                                 <span>{qty}</span>
-                                                <button onClick={() => updateModalQty(item.id, -1)} type="button">-</button>
+                                                <button onClick={() => updateModalQty(item.id, -1)} type="button">−</button>
                                             </div>
                                         ) : (
                                             <button className="hk-inline-add" type="button" onClick={() => updateModalQty(item.id, 1)}>ADD</button>
@@ -347,7 +348,7 @@ const BillingModule = () => {
 
                         <div className="hk-form-actions" style={{ justifyContent: 'flex-end' }}>
                             <button type="button" className="hk-btn-cancel" onClick={() => setShowItemsModal(false)}>Cancel</button>
-                            <button type="button" className="hk-btn-create" onClick={applySelectedItems}>Add</button>
+                            <button type="button" className="hk-btn-create" onClick={applySelectedItems}>Add Items</button>
                         </div>
                     </div>
                 </div>

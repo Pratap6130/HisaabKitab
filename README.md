@@ -5,7 +5,7 @@ HisaabKitab is a full-stack billing system for small and mid-sized businesses to
 It is designed for practical daily operations: quick invoice creation, searchable records, and clear customer-level billing visibility.
 
 ## Business Focus
-- Centralises customer, item, and invoice data.
+- Centralizes customer, item, and invoice data.
 - Reduces manual billing steps and duplicate entries.
 - Improves audit readiness with structured invoice history.
 - Supports GST-aware billing flows.
@@ -59,13 +59,13 @@ Prerequisites:
 
 1. Clone the repository.
 2. Backend setup:
-   - Go to the backend folder
+   - Go to backend folder
    - Run npm install
 3. Frontend setup:
-   - Go to the frontend folder
+   - Go to frontend folder
    - Run npm install
 4. Database setup:
-   - Run setup-database.bat from the project root
+   - Run setup-database.bat from project root
    - Or execute backend/database/schema.sql manually in PostgreSQL
 5. Start services:
    - Backend: npm run dev (inside backend)
@@ -100,4 +100,4 @@ Current backend URL:
 - setup-database.bat: local PostgreSQL bootstrap script
 
 ## Status
-This project is production-deployed with separate frontend and backend services and a managed cloud PostgreSQL database.
+This project is production-deployed with separated frontend and backend services and a managed cloud PostgreSQL database.

@@ -104,6 +104,13 @@ const CustomerMaster = () => {
 
     return (
         <section className="hk-page-shell">
+            {message.text && (
+                <div className={`alert alert-${message.type}`}>
+                    <span>{message.text}</span>
+                    <button onClick={() => setMessage({ type: '', text: '' })}>×</button>
+                </div>
+            )}
+
             {!showForm && (
                 <>
                     <SectionHeader title="Customers" onAdd={() => setShowForm(true)} />
@@ -139,47 +146,42 @@ const CustomerMaster = () => {
                 <div className="hk-form-shell">
                     <h2 className="hk-form-title">Add New Customer</h2>
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="hk-form-grid">
-                            <div className="hk-input-group">
-                                <label>Customer Name</label>
-                                <input type="text" name="customer_name" value={formData.customer_name} onChange={handleInputChange} required />
+                    <div className="hk-form-card">
+                        <form onSubmit={handleSubmit}>
+                            <div className="hk-form-grid">
+                                <div className="hk-input-group">
+                                    <label>Customer Name</label>
+                                    <input type="text" name="customer_name" value={formData.customer_name} onChange={handleInputChange} required />
+                                </div>
+                                <div className="hk-input-group">
+                                    <label>Customer Address</label>
+                                    <input type="text" name="customer_address" value={formData.customer_address} onChange={handleInputChange} required />
+                                </div>
+                                <div className="hk-input-group">
+                                    <label>Customer Pan Card Number</label>
+                                    <input type="text" name="customer_pan_card" value={formData.customer_pan_card} onChange={handleInputChange} required />
+                                </div>
+                                <div className="hk-input-group">
+                                    <label>Customer GST Number</label>
+                                    <input type="text" name="customer_gst_number" value={formData.customer_gst_number} onChange={handleInputChange} />
+                                </div>
+                                <div className="hk-input-group">
+                                    <label>Customer Status</label>
+                                    <select name="status" value={formData.status} onChange={handleInputChange}>
+                                        <option value="Active">Active</option>
+                                        <option value="In-Active">In-Active</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="hk-input-group">
-                                <label>Customer Address</label>
-                                <input type="text" name="customer_address" value={formData.customer_address} onChange={handleInputChange} required />
-                            </div>
-                            <div className="hk-input-group">
-                                <label>Customer Pan Card Number</label>
-                                <input type="text" name="customer_pan_card" value={formData.customer_pan_card} onChange={handleInputChange} required />
-                            </div>
-                            <div className="hk-input-group">
-                                <label>Customer GST Number</label>
-                                <input type="text" name="customer_gst_number" value={formData.customer_gst_number} onChange={handleInputChange} />
-                            </div>
-                            <div className="hk-input-group">
-                                <label>Customer Status</label>
-                                <select name="status" value={formData.status} onChange={handleInputChange}>
-                                    <option value="Active">Active</option>
-                                    <option value="In-Active">In-Active</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div className="hk-form-actions">
-                            <button type="button" className="hk-btn-cancel" onClick={handleCancel}>Cancel</button>
-                            <button type="submit" className="hk-btn-create" disabled={loading}>
-                                {loading ? 'Creating...' : 'Create'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            {message.text && (
-                <div className={`alert alert-${message.type}`} style={{ marginTop: '16px' }}>
-                    <span>{message.text}</span>
-                    <button onClick={() => setMessage({ type: '', text: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>x</button>
+                            <div className="hk-form-actions">
+                                <button type="button" className="hk-btn-cancel" onClick={handleCancel}>Cancel</button>
+                                <button type="submit" className="hk-btn-create" disabled={loading}>
+                                    {loading ? 'Creating...' : 'Create Customer'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </section>

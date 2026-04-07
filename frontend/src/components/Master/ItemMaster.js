@@ -84,6 +84,13 @@ const ItemMaster = () => {
 
     return (
         <section className="hk-page-shell">
+            {message.text && (
+                <div className={`alert alert-${message.type}`}>
+                    <span>{message.text}</span>
+                    <button onClick={() => setMessage({ type: '', text: '' })}>×</button>
+                </div>
+            )}
+
             {!showForm && (
                 <>
                     <SectionHeader title="Items" onAdd={() => setShowForm(true)} />
@@ -119,39 +126,34 @@ const ItemMaster = () => {
                 <div className="hk-form-shell">
                     <h2 className="hk-form-title">Add New Item</h2>
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="hk-form-grid hk-form-grid-item">
-                            <div className="hk-input-group">
-                                <label>Item Name</label>
-                                <input type="text" name="item_name" value={formData.item_name} onChange={handleInputChange} required />
+                    <div className="hk-form-card">
+                        <form onSubmit={handleSubmit}>
+                            <div className="hk-form-grid hk-form-grid-item">
+                                <div className="hk-input-group">
+                                    <label>Item Name</label>
+                                    <input type="text" name="item_name" value={formData.item_name} onChange={handleInputChange} required />
+                                </div>
+                                <div className="hk-input-group">
+                                    <label>Customer Selling Price</label>
+                                    <input type="number" step="0.01" min="0" name="customer_selling_price" value={formData.customer_selling_price} onChange={handleInputChange} required />
+                                </div>
+                                <div className="hk-input-group">
+                                    <label>Customer Status</label>
+                                    <select name="status" value={formData.status} onChange={handleInputChange}>
+                                        <option value="Active">Active</option>
+                                        <option value="In-Active">In-Active</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="hk-input-group">
-                                <label>Customer Selling Price</label>
-                                <input type="number" step="0.01" min="0" name="customer_selling_price" value={formData.customer_selling_price} onChange={handleInputChange} required />
-                            </div>
-                            <div className="hk-input-group">
-                                <label>Customer Status</label>
-                                <select name="status" value={formData.status} onChange={handleInputChange}>
-                                    <option value="Active">Active</option>
-                                    <option value="In-Active">In-Active</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div className="hk-form-actions">
-                            <button type="button" className="hk-btn-cancel" onClick={handleCancel}>Cancel</button>
-                            <button type="submit" className="hk-btn-create" disabled={loading}>
-                                {loading ? 'Creating...' : 'Create'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            {message.text && (
-                <div className={`alert alert-${message.type}`} style={{ marginTop: '16px' }}>
-                    <span>{message.text}</span>
-                    <button onClick={() => setMessage({ type: '', text: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>x</button>
+                            <div className="hk-form-actions">
+                                <button type="button" className="hk-btn-cancel" onClick={handleCancel}>Cancel</button>
+                                <button type="submit" className="hk-btn-create" disabled={loading}>
+                                    {loading ? 'Creating...' : 'Create Item'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </section>

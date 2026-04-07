@@ -92,49 +92,71 @@ const Dashboard = () => {
         setSelectedInvoice(null);
     };
 
-    return (
-        <div className="card">
-            <h1 style={{ marginBottom: '30px' }}>Dashboard</h1>
+    const totalRevenue = recentInvoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount || 0), 0);
 
-            {/* Tab Navigation */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #e0e0e0' }}>
+    return (
+        <div className="hk-dashboard">
+            <div className="hk-dashboard-header">
+                <h1 className="hk-dashboard-title">Dashboard</h1>
+                <p className="hk-dashboard-subtitle">Overview of your business activity</p>
+            </div>
+
+            <div className="hk-stat-cards">
+                <div className="hk-stat-card">
+                    <div className="hk-stat-card-icon blue">📄</div>
+                    <h3>{recentInvoices.length}</h3>
+                    <p>Recent Invoices</p>
+                </div>
+                <div className="hk-stat-card">
+                    <div className="hk-stat-card-icon green">👥</div>
+                    <h3>{customers.length}</h3>
+                    <p>Active Customers</p>
+                </div>
+                <div className="hk-stat-card">
+                    <div className="hk-stat-card-icon amber">💰</div>
+                    <h3>₹{totalRevenue.toFixed(0)}</h3>
+                    <p>Recent Revenue</p>
+                </div>
+                <div className="hk-stat-card">
+                    <div className="hk-stat-card-icon purple">📈</div>
+                    <h3>{recentInvoices.length > 0 ? '₹' + (totalRevenue / recentInvoices.length).toFixed(0) : '₹0'}</h3>
+                    <p>Avg. Invoice Value</p>
+                </div>
+            </div>
+
+            <div className="hk-tabs">
                 <button
-                    className={`btn ${activeTab === 'recent' ? 'btn-primary' : 'btn-secondary'}`}
+                    className={`hk-tab ${activeTab === 'recent' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('recent'); setSelectedInvoice(null); }}
-                    style={{ borderBottom: activeTab === 'recent' ? '3px solid #3498db' : 'none', borderRadius: '0' }}
                 >
                     Recent Invoices
                 </button>
                 <button
-                    className={`btn ${activeTab === 'customer' ? 'btn-primary' : 'btn-secondary'}`}
+                    className={`hk-tab ${activeTab === 'customer' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('customer'); setSelectedInvoice(null); }}
-                    style={{ borderBottom: activeTab === 'customer' ? '3px solid #3498db' : 'none', borderRadius: '0' }}
                 >
                     Customer Invoices
                 </button>
                 <button
-                    className={`btn ${activeTab === 'search' ? 'btn-primary' : 'btn-secondary'}`}
+                    className={`hk-tab ${activeTab === 'search' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('search'); setSelectedInvoice(null); }}
-                    style={{ borderBottom: activeTab === 'search' ? '3px solid #3498db' : 'none', borderRadius: '0' }}
                 >
                     Search Invoice
                 </button>
             </div>
 
-            {/* Recent Invoices Tab */}
             {activeTab === 'recent' && (
-                <div>
-                    <h2>Recently Generated Invoices</h2>
-                    <p style={{ color: '#7f8c8d', marginBottom: '15px' }}>Showing latest 10 invoices</p>
+                <div className="hk-tab-panel">
+                    <h2 className="hk-section-title">Recently Generated Invoices</h2>
+                    <p className="hk-section-subtitle">Showing latest 10 invoices</p>
                     <InvoiceTable invoices={recentInvoices} loading={loading} onViewInvoice={handleViewInvoice} />
                 </div>
             )}
 
-            {/* Customer Invoices Tab */}
             {activeTab === 'customer' && (
-                <div>
-                    <h2>Customer Invoices</h2>
-                    <div className="form-group" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+                <div className="hk-tab-panel">
+                    <h2 className="hk-section-title">Customer Invoices</h2>
+                    <div className="hk-search-group">
                         <label>Select Customer</label>
                         <select value={selectedCustomerId} onChange={(e) => handleCustomerSelect(e.target.value)}>
                             <option value="">Choose a customer...</option>
@@ -151,16 +173,15 @@ const Dashboard = () => {
                     )}
 
                     {!selectedCustomerId && (
-                        <p style={{ color: '#7f8c8d', textAlign: 'center', marginTop: '30px' }}>Select a customer to view their invoices</p>
+                        <p className="hk-empty">Select a customer to view their invoices</p>
                     )}
                 </div>
             )}
 
-            {/* Search Invoice Tab */}
             {activeTab === 'search' && (
-                <div>
-                    <h2>Search Invoice</h2>
-                    <div className="form-group" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+                <div className="hk-tab-panel">
+                    <h2 className="hk-section-title">Search Invoice</h2>
+                    <div className="hk-search-group">
                         <label>Invoice ID</label>
                         <input
                             type="text"
@@ -170,66 +191,72 @@ const Dashboard = () => {
                             onKeyPress={(e) => e.key === 'Enter' && handleSearchInvoice()}
                         />
                     </div>
-                    <button className="btn btn-primary" onClick={handleSearchInvoice} disabled={loading || !searchQuery.trim()}>
+                    <button className="hk-btn-search" onClick={handleSearchInvoice} disabled={loading || !searchQuery.trim()}>
                         {loading ? 'Searching...' : 'Search'}
                     </button>
 
                     {searchResults.length > 0 && (
-                        <div style={{ marginTop: '20px' }}>
+                        <div style={{ marginTop: '16px' }}>
                             <InvoiceTable invoices={searchResults} loading={loading} onViewInvoice={handleViewInvoice} />
                         </div>
                     )}
 
                     {searchQuery && searchResults.length === 0 && !loading && (
-                        <p style={{ color: '#7f8c8d', textAlign: 'center', marginTop: '30px' }}>No invoices found</p>
+                        <p className="hk-empty">No invoices found</p>
                     )}
                 </div>
             )}
 
-            {/* Invoice Details Modal */}
             {selectedInvoice && (
-                <div className="modal show" onClick={closeInvoiceView}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={closeInvoiceView} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px' }}>×</button>
-                        <h2>Invoice Details</h2>
+                <div className="hk-invoice-modal-backdrop" onClick={closeInvoiceView}>
+                    <div className="hk-invoice-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="hk-invoice-modal-header">
+                            <h2>Invoice Details</h2>
+                            <button className="hk-close-btn" onClick={closeInvoiceView}>×</button>
+                        </div>
 
-                        <div style={{ marginTop: '20px' }}>
-                            <h3>{selectedInvoice.invoice.invoice_id}</h3>
-                            <p><strong>Customer:</strong> {selectedInvoice.invoice.customer_name}</p>
-                            <p><strong>Address:</strong> {selectedInvoice.invoice.customer_address}</p>
-                            <p><strong>Date:</strong> {new Date(selectedInvoice.invoice.invoice_date).toLocaleDateString()}</p>
+                        <div>
+                            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#4F46E5', marginBottom: '14px', letterSpacing: '-0.01em', fontFamily: 'Poppins, sans-serif' }}>
+                                {selectedInvoice.invoice.invoice_id}
+                            </h3>
+                            <p className="hk-invoice-detail-row"><strong>Customer</strong> {selectedInvoice.invoice.customer_name}</p>
+                            <p className="hk-invoice-detail-row"><strong>Address</strong> {selectedInvoice.invoice.customer_address}</p>
+                            <p className="hk-invoice-detail-row"><strong>Date</strong> {new Date(selectedInvoice.invoice.invoice_date).toLocaleDateString()}</p>
 
-                            <h4 style={{ marginTop: '20px' }}>Items</h4>
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Qty</th>
-                                        <th>Price</th>
-                                        <th>Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedInvoice.items.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td>{item.item_name}</td>
-                                            <td>{item.quantity}</td>
-                                            <td>₹{parseFloat(item.unit_price).toFixed(2)}</td>
-                                            <td>₹{parseFloat(item.line_total).toFixed(2)}</td>
+                            <div className="hk-table-wrap" style={{ marginTop: '20px' }}>
+                                <table className="hk-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-
-                            <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
-                                <p><strong>Subtotal:</strong> ₹{parseFloat(selectedInvoice.invoice.subtotal).toFixed(2)}</p>
-                                <p><strong>GST ({selectedInvoice.invoice.gst_percentage}%):</strong> ₹{parseFloat(selectedInvoice.invoice.gst_amount).toFixed(2)}</p>
-                                <h3 style={{ marginTop: '10px', color: '#2c3e50' }}>Total: ₹{parseFloat(selectedInvoice.invoice.total_amount).toFixed(2)}</h3>
+                                    </thead>
+                                    <tbody>
+                                        {selectedInvoice.items.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td>{item.item_name}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>₹{parseFloat(item.unit_price).toFixed(2)}</td>
+                                                <td className="hk-cell-strong">₹{parseFloat(item.line_total).toFixed(2)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
 
-                            <div className="btn-group" style={{ marginTop: '15px' }}>
-                                <button className="btn btn-success" onClick={() => window.print()}>Print</button>
-                                <button className="btn btn-secondary" onClick={closeInvoiceView}>Close</button>
+                            <div className="hk-invoice-summary-box">
+                                <p><strong>Subtotal</strong> ₹{parseFloat(selectedInvoice.invoice.subtotal).toFixed(2)}</p>
+                                <p><strong>GST ({selectedInvoice.invoice.gst_percentage}%)</strong> ₹{parseFloat(selectedInvoice.invoice.gst_amount).toFixed(2)}</p>
+                                <div className="hk-invoice-grand-total">
+                                    Total: ₹{parseFloat(selectedInvoice.invoice.total_amount).toFixed(2)}
+                                </div>
+                            </div>
+
+                            <div className="hk-btn-row">
+                                <button className="hk-btn-print" onClick={() => window.print()}>Print</button>
+                                <button className="hk-btn-close" onClick={closeInvoiceView}>Close</button>
                             </div>
                         </div>
                     </div>
@@ -245,12 +272,12 @@ const InvoiceTable = ({ invoices, loading, onViewInvoice }) => {
     }
 
     if (invoices.length === 0) {
-        return <p style={{ marginTop: '20px', textAlign: 'center', color: '#7f8c8d' }}>No invoices found</p>;
+        return <p className="hk-empty">No invoices found</p>;
     }
 
     return (
-        <div style={{ overflowX: 'auto', marginTop: '20px' }}>
-            <table className="table table-striped">
+        <div className="hk-table-wrap">
+            <table className="hk-data-table">
                 <thead>
                     <tr>
                         <th>Invoice ID</th>
@@ -266,15 +293,15 @@ const InvoiceTable = ({ invoices, loading, onViewInvoice }) => {
                 <tbody>
                     {invoices.map(invoice => (
                         <tr key={invoice.id}>
-                            <td><strong>{invoice.invoice_id}</strong></td>
+                            <td className="hk-cell-strong">{invoice.invoice_id}</td>
                             <td>{invoice.customer_name}</td>
                             <td>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
                             <td>₹{parseFloat(invoice.subtotal).toFixed(2)}</td>
                             <td>₹{parseFloat(invoice.gst_amount).toFixed(2)}</td>
-                            <td><strong>₹{parseFloat(invoice.total_amount).toFixed(2)}</strong></td>
-                            <td><span className={`badge badge-${invoice.status.toLowerCase()}`}>{invoice.status}</span></td>
+                            <td className="hk-cell-strong">₹{parseFloat(invoice.total_amount).toFixed(2)}</td>
+                            <td><span className={`hk-badge hk-badge-${invoice.status.toLowerCase()}`}>{invoice.status}</span></td>
                             <td>
-                                <button className="btn btn-primary" onClick={() => onViewInvoice(invoice.invoice_id)}>View</button>
+                                <button className="hk-btn-view" onClick={() => onViewInvoice(invoice.invoice_id)}>View</button>
                             </td>
                         </tr>
                     ))}
@@ -285,7 +312,3 @@ const InvoiceTable = ({ invoices, loading, onViewInvoice }) => {
 };
 
 export default Dashboard;
-
-
-
-
