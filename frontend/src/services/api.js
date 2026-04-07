@@ -19,7 +19,6 @@ const normalizeApiBaseUrl = (rawBaseUrl) => {
 
 const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
 
-// ===== Customer APIs =====
 export const getActiveCustomers = () => axios.get(`${API_BASE_URL}/customers/all`);
 export const getAllCustomers = () => axios.get(`${API_BASE_URL}/customers/all-with-inactive`);
 export const getCustomer = (id) => axios.get(`${API_BASE_URL}/customers/${id}`);
@@ -27,7 +26,6 @@ export const createCustomer = (data) => axios.post(`${API_BASE_URL}/customers/cr
 export const updateCustomer = (id, data) => axios.put(`${API_BASE_URL}/customers/${id}/update`, data);
 export const deleteCustomer = (id) => axios.delete(`${API_BASE_URL}/customers/${id}/delete`);
 
-// ===== Item APIs =====
 export const getActiveItems = () => axios.get(`${API_BASE_URL}/items/all`);
 export const getAllItems = () => axios.get(`${API_BASE_URL}/items/all-with-inactive`);
 export const getItem = (id) => axios.get(`${API_BASE_URL}/items/${id}`);
@@ -35,7 +33,6 @@ export const createItem = (data) => axios.post(`${API_BASE_URL}/items/create`, d
 export const updateItem = (id, data) => axios.put(`${API_BASE_URL}/items/${id}/update`, data);
 export const deleteItem = (id) => axios.delete(`${API_BASE_URL}/items/${id}/delete`);
 
-// ===== Invoice APIs =====
 export const createInvoice = (data) => axios.post(`${API_BASE_URL}/invoices/create`, data);
 export const getAllInvoices = () => axios.get(`${API_BASE_URL}/invoices/all`);
 export const getRecentInvoices = (limit = 10) => axios.get(`${API_BASE_URL}/invoices/recent?limit=${limit}`);

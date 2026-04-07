@@ -1,8 +1,6 @@
 import pool from '../config/database.js';
 
-// PAN format: ABCDE1234F where 4th char indicates holder type.
 const PAN_REGEX = /^[A-Z]{3}[PCHFATG][A-Z]\d{4}[A-Z]$/;
-// GST format: 15 chars (e.g. 27ABCDE1234F1Z5)
 const GST_REGEX = /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]$/;
 
 const normalizePan = (pan) => (pan || '').trim().toUpperCase();
@@ -28,7 +26,6 @@ const validateTaxInputs = ({ customer_pan_card, customer_gst_number, is_gst_regi
     return null;
 };
 
-// Fetch all customers (active)
 export const getAllCustomers = async (req, res) => {
     try {
         const result = await pool.query(
@@ -42,7 +39,6 @@ export const getAllCustomers = async (req, res) => {
     }
 };
 
-// Fetch all customers (including inactive)
 export const getAllCustomersWithInactive = async (req, res) => {
     try {
         const result = await pool.query(
@@ -55,7 +51,6 @@ export const getAllCustomersWithInactive = async (req, res) => {
     }
 };
 
-// Fetch single customer by ID
 export const getCustomerById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -70,11 +65,9 @@ export const getCustomerById = async (req, res) => {
     }
 };
 
-// Create new customer
 export const createCustomer = async (req, res) => {
     const { customer_name, customer_address, customer_pan_card, customer_gst_number, is_gst_registered, status } = req.body;
-    
-    // Validation
+
     if (!customer_name || !customer_address || !customer_pan_card) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
@@ -98,14 +91,13 @@ export const createCustomer = async (req, res) => {
         res.status(201).json({ success: true, data: result.rows[0], message: 'Customer created successfully' });
     } catch (error) {
         console.error(error);
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
             return res.status(400).json({ success: false, message: 'PAN Card or GST Number already exists' });
         }
         res.status(500).json({ success: false, message: 'Error creating customer' });
     }
 };
 
-// Update customer
 export const updateCustomer = async (req, res) => {
     const { id } = req.params;
     const { customer_name, customer_address, customer_pan_card, customer_gst_number, is_gst_registered, status } = req.body;
@@ -138,7 +130,6 @@ export const updateCustomer = async (req, res) => {
     }
 };
 
-// Delete customer (soft delete - update status)
 export const deleteCustomer = async (req, res) => {
     const { id } = req.params;
     try {

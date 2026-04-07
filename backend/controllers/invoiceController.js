@@ -6,7 +6,6 @@ import {
     buildInvoiceItemRows
 } from '../services/invoiceService.js';
 
-// Create new invoice
 export const createInvoice = async (req, res) => {
     const client = await pool.connect();
     try {
@@ -15,7 +14,6 @@ export const createInvoice = async (req, res) => {
 
         await client.query('BEGIN');
 
-        // Fetch customer details
         const customerResult = await client.query('SELECT * FROM customers WHERE id = $1', [customer_id]);
         if (customerResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -25,10 +23,8 @@ export const createInvoice = async (req, res) => {
         const customer = customerResult.rows[0];
         const totals = await calculateInvoiceTotals(client, customer, items);
 
-        // Generate unique invoice ID
         const invoiceId = await generateInvoiceId(client);
 
-        // Create invoice
         const invoiceResult = await client.query(
             `INSERT INTO invoices (invoice_id, customer_id, subtotal, gst_amount, gst_percentage, total_amount, status)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -46,7 +42,6 @@ export const createInvoice = async (req, res) => {
 
         const invoice = invoiceResult.rows[0];
 
-        // Create invoice items
         const invoiceItemRows = buildInvoiceItemRows(invoice.id, items, totals.priceByItemId);
         for (const row of invoiceItemRows) {
 
@@ -59,7 +54,6 @@ export const createInvoice = async (req, res) => {
 
         await client.query('COMMIT');
 
-        // Fetch complete invoice with items
         const completeInvoice = await pool.query(
             `SELECT i.*, c.customer_name, c.is_gst_registered
              FROM invoices i
@@ -96,7 +90,6 @@ export const createInvoice = async (req, res) => {
     }
 };
 
-// Fetch all invoices
 export const getAllInvoices = async (req, res) => {
     try {
         const result = await pool.query(
@@ -112,7 +105,6 @@ export const getAllInvoices = async (req, res) => {
     }
 };
 
-// Fetch invoices by customer ID
 export const getInvoicesByCustomer = async (req, res) => {
     const { customerId } = req.params;
     try {
@@ -131,7 +123,6 @@ export const getInvoicesByCustomer = async (req, res) => {
     }
 };
 
-// Fetch single invoice by ID
 export const getInvoiceById = async (req, res) => {
     const { invoiceId } = req.params;
     try {
@@ -170,7 +161,6 @@ export const getInvoiceById = async (req, res) => {
     }
 };
 
-// Search invoices by invoice ID
 export const searchInvoiceById = async (req, res) => {
     const { query } = req.query;
     try {
@@ -189,7 +179,6 @@ export const searchInvoiceById = async (req, res) => {
     }
 };
 
-// Get recent invoices (for dashboard)
 export const getRecentInvoices = async (req, res) => {
     const limit = req.query.limit || 10;
     try {
@@ -208,7 +197,6 @@ export const getRecentInvoices = async (req, res) => {
     }
 };
 
-// Get invoice details with items
 export const getInvoiceDetails = async (req, res) => {
     const { invoiceId } = req.params;
     try {

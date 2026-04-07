@@ -1,6 +1,5 @@
 import pool from '../config/database.js';
 
-// Fetch all items (active)
 export const getAllItems = async (req, res) => {
     try {
         const result = await pool.query(
@@ -14,7 +13,6 @@ export const getAllItems = async (req, res) => {
     }
 };
 
-// Fetch all items (including inactive)
 export const getAllItemsWithInactive = async (req, res) => {
     try {
         const result = await pool.query(
@@ -27,7 +25,6 @@ export const getAllItemsWithInactive = async (req, res) => {
     }
 };
 
-// Fetch single item by ID
 export const getItemById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -42,11 +39,9 @@ export const getItemById = async (req, res) => {
     }
 };
 
-// Create new item
 export const createItem = async (req, res) => {
     const { item_name, customer_selling_price, status } = req.body;
 
-    // Validation
     if (!item_name || !customer_selling_price) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
@@ -65,7 +60,6 @@ export const createItem = async (req, res) => {
     }
 };
 
-// Update item
 export const updateItem = async (req, res) => {
     const { id } = req.params;
     const { item_name, customer_selling_price, status } = req.body;
@@ -88,7 +82,6 @@ export const updateItem = async (req, res) => {
     }
 };
 
-// Delete item (soft delete - update status)
 export const deleteItem = async (req, res) => {
     const { id } = req.params;
     try {

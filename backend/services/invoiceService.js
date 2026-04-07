@@ -15,7 +15,6 @@ export const generateInvoiceId = async (dbClient) => {
     let exists = true;
 
     while (exists) {
-        // INVC + 6 digits = 10 characters
         const randomPart = Math.floor(100000 + Math.random() * 900000).toString();
         invoiceId = `INVC${randomPart}`;
 
